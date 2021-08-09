@@ -1,0 +1,29 @@
+package com.nsh.security;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import lombok.extern.log4j.Log4j;
+
+/**
+ * ��ȣȭ�� ���� PasswordEncoder ���� ����
+ */
+@Log4j
+public class CustomNoOpPasswordEncoder implements PasswordEncoder {
+
+	@Override
+	public String encode(CharSequence rawPassword) {
+		
+		log.warn("���ڵ� ��: " + rawPassword);
+		
+		return rawPassword.toString();
+	}
+
+	@Override
+	public boolean matches(CharSequence rawPassword, String encodedPassword) {
+		
+		log.warn("��Ī: " + rawPassword + ": " + encodedPassword);
+		
+		return rawPassword.toString().equals(encodedPassword);
+	}
+
+}

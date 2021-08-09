@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+<!-- CustomAccessDeniedHandler를 빈으로 등록 -->
+<bean id="customAccessDenied" class="com.nsh.security.CustomAccessDeniedHandler"></bean>
+
+<!-- 직접만든 CustomLoginSuccessHandler를 빈으로 등록 -->
+<bean id="customLoginSuccess" class="com.nsh.security.CustomLoginSuccessHandler"></bean>
+
+<!-- 직접 만든 암호화 없는 PasswordEncoder를 빈으로 등록 -->
+<!-- <bean id="customPasswordEncoder" class="org.zerock.security.CustomNoOpPasswordEncoder"></bean> -->
+
+<!-- BcryptPasswordEncoder로 패스워드 보호 -->
+<bean id="bcryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />
+
+<!-- CustomUserDetailsService를 빈으로 등록 -->
+<bean id="customUserDetailsService" class="com.nsh.security.CustomUserDetailsService"></bean>
+
+<security:http>
+	<!-- 접근제한 설정 -->
+	<security:intercept-url pattern="/sample/all" access="permitAll"/>
+	
+	<security:intercept-url pattern="/sample/member" access="hasRole('ROLE_MEMBER')"/>
+	
+	<security:intercept-url pattern="/sample/admin" access="hasRole('ROLE_ADMIN')"/>
+	
+	<!-- <security:form-login /> -->
+	<!-- 직접 만든 로그인 페이지 -->
+	<security:form-login login-page="/customLogin" authentication-success-handler-ref="customLoginSuccess"/>
+	
+	<!--접근제한 메세지 처리-->
+	<!-- <security:access-denied-handler error-page="/accessError"/> -->
+	<!-- 엑세스 디나이 핸들러 인터페이스를 직접구현했으므로 error-page 대신 -->
+	<security:access-denied-handler ref="customAccessDenied"/>
+	
+	<!-- 로그아웃 처리 및 직접 핸들링 구현 -->
+	<security:logout logout-url="/customLogout" invalidate-session="true"/>
+
+	<!-- 자동 로그인 -->
+	<security:remember-me
+		data-source-ref="dataSource" token-validity-seconds="604800"
+	/>
+	
+	<!-- 자동 로그인에 사용되는 쿠키도 삭제하도록 설정 -->
+	<security:logout logout-url="/customLogout" invalidate-session="true" delete-cookies="remember-me,JSESSION_ID"/>
+
+</security:http>
+
+<!-- 단순로그인처리  -->
+<!-- <security:authentication-manager>
+	<security:authentication-provider>
+		<security:user-service>
+			<security:user name="member" password="{noop}member" authorities="ROLE_MEMBER"/>
+			<security:user name="admin" password="{noop}admin" authorities="ROLE_MEMBER, ROLE_ADMIN"/>
+		</security:user-service>
+	</security:authentication-provider>
+</security:authentication-manager> -->
+
+<!-- JDBC로그인 -->
+<!-- <security:authentication-manager> 
+	<security:authentication-provider> 
+			<security:jdbc-user-service 
+			data-source-ref="dataSource" users-by-username-query="select userid , userpw 
+			, enabled from tbl_member where userid = ? " authorities-by-username-query="select 
+			userid, auth from tbl_member_auth where userid = ? " />  
+			<security:password-encoder ref="bcryptPasswordEncoder" 
+			/> 
+	</security:authentication-provider> 
+</security:authentication-manager> -->
+
+<!-- CustomDetail -->
+<security:authentication-manager>
+	<security:authentication-provider user-service-ref="customUserDetailsService">
+		<security:password-encoder ref="bcryptPasswordEncoder"/>
+		
+	</security:authentication-provider>
+</security:authentication-manager>
+
+</beans>
